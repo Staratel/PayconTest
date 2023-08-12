@@ -1,10 +1,10 @@
 
 import aiohttp
 import asyncio
-import json
+import gi
 
-# https://paycon.su/api1.php
-# https://paycon.su/api2.php
+gi.require_version("Gtk", "3.0")
+from gi.repository import GLib, Gtk
 
 urls = ['https://paycon.su/api1.php', 'https://paycon.su/api2.php']
 
@@ -15,19 +15,18 @@ async def get_url_data(url, session):
 	return data
 
 
-async def main(urls):
+async def get_json_data():
+	# Для появления спинера. Анимацию не смог сделать, были мысли о запуске второго потока или, но не вышло с Gtk
+	while Gtk.events_pending():
+		Gtk.main_iteration()
 	async with aiohttp.ClientSession() as session:
 		tasks = []
 		for url in urls:
 			tasks.append(get_url_data(url, session))
-		result = await asyncio.gather(*tasks, return_exceptions=True)
-	return result
+		data = await asyncio.gather(*tasks, return_exceptions=True)
 
-
-def get_json_data():
-	data = asyncio.run(main(urls))
 	result = []
-	for item in data:
-		result += item
-
+	for dict in data:
+		for i in dict:
+			result.append(f"{i['name']} {i['price']}")
 	return result
